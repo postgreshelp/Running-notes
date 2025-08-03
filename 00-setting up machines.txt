@@ -19,3 +19,4 @@ How to clone existing vm?
 5. Since its a cloned copy, change the hostname to lab02
     -> hostnamectl set-hostname lab02
 	-> reboot.
+

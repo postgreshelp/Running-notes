@@ -1,0 +1,46 @@
+pgbench
+--------
+
+ - is a benchmarking tool.
+ 
+ pgbench -i postgres 			      # create dummy tables.
+ pgbench -i -s 10 postgres 		      # create dummy tables (10 times the size of default)
+ pgbench -c 10 -t 500 postgres	      # run 10 connections, each with 500 transactions.
+ pgbench -c 50 -T 120 postgres -P 3   # run the test for 120s
+ 
+ Custom queries
+ 
+ 1. create a .sql file
+ 2. pgbench -c 50 -T 120 postgres -P 3 -f <your_sql_file.sql>
+ 
+top - 08:05:03 up 34 min,  4 users,  load average: 4.14, 2.81, 1.86
+Tasks: 264 total,   7 running, 257 sleeping,   0 stopped,   0 zombie
+%Cpu(s): 25.0 us, 58.8 sy,  0.0 ni,  9.4 id,  1.6 wa,  4.1 hi,  1.2 si,  0.0 st
+MiB Mem :   3627.6 total,   1016.6 free,   1111.2 used,   1802.6 buff/cache
+MiB Swap:   8000.0 total,   8000.0 free,      0.0 used.   2516.4 avail Mem
+
+    PID USER      PR  NI    VIRT    RES    SHR S  %CPU  %MEM     TIME+ COMMAND
+   4998 postgres  20   0 1389712 212916 210184 R  28.6   5.7   1:06.34 postgres: postgres postgres [local] idle in transaction
+   5001 postgres  20   0 1389712 212532 209800 R  23.6   5.7   1:06.11 postgres: postgres postgres [local] idle in transaction
+   4997 postgres  20   0 1389676 212276 209672 R  23.3   5.7   1:07.80 postgres: postgres postgres [local] idle
+   4999 postgres  20   0 1389712 212276 209544 R  28.6   5.7   1:06.49 postgres: postgres postgres [local] idle in transaction
+   5000 postgres  20   0 1389712 212276 209544 R  23.3   5.7   1:06.44 postgres: postgres postgres [local] idle in transaction
+   4460 postgres  20   0 1387612 184544 182664 S   0.0   5.0   0:01.61 postgres: checkpointer
+
+
+%Cpu(s): 25.0 us  ##### should always be less than 70*
+   
+   4998 postgres  20   0 1389712 212916 210184 R  28.6   5.7   1:06.34 postgres: postgres postgres [local] idle in transaction
+   
+   filter options
+   ----------------
+   u     -> filter by user
+   c     -> additional details
+   1     -> breakdown by CPU
+   Sft+m -> order by memory
+   Sft+c -> CPU
+   
+   Other options : man top
+   
+   select * from pg_stat_activity where pid=4998;
+

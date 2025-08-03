@@ -1,0 +1,99 @@
+user administration
+-------------------
+
+
+create user kfc_user with password 'kfc_user';
+create database kfc_db with owner kfc_user;
+
+\q
+psql -U kfc_user -d kfc_db
+create schema kfc_user;
+
+postgres   : default administrative connection database
+template0  : unmodifiable empty database
+template1  : default template for new databases
+
+create database
+================
+create database a;							#use template1 as template database
+create database b template template0;		#use template0 as template database
+create database c template a;				#use a as template database
+pepsidb=> \dt+
+                                       List of relations
+ Schema |  Name  | Type  |   Owner    | Persistence | Access method |    Size    | Description
+--------+--------+-------+------------+-------------+---------------+------------+-------------
+ public | atable | table | pepsi_user | permanent   | heap          | 0 bytes    |
+ public | btable | table | pepsi_user | permanent   | heap          | 8192 bytes |
+ public | emp    | table | pepsi_user | permanent   | heap          | 0 bytes    |
+(3 rows)
+
+pepsidb=> show search_path;
+           search_path
+---------------------------------
+ pepsi_user, pepsischema, public
+(1 row)
+
+pepsidb=>u
+
+read-only user
+--------------
+grant connect on database kfc_db to kfc_read;
+grant usage on schema kfc_user to kfc_read;
+grant select on kfc_user.emp to kfc_read;
+
+grant select on all tables in schema kfc_user to kfc_read;
+alter default privileges in schema kfc_user grant select on tables to kfc_read;
+
+
+when a new user is created...
+
+	1. grant connect access to any database
+	2. grant usage/create access to any schema...
+	
+roles
+------
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+create user superapp with password 'superapp';
+create database app with owner superapp;
+
+
+create user app1;
+create user app2;
+
+\c - superapp
+
+grant create on app to app1;
+grant create on app to app2;
+
+connect as app1,
+
+create schema app1;
+
+connect as app2
+
+create schema app2;

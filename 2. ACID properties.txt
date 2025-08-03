@@ -1,0 +1,28 @@
+ACID Properties
+---------------
+1. SQL
+	
+2. ACID
+
+	Atomicity
+	
+		- irrespective of no.of statements, treat them as unique.
+		
+		begin;
+		update emp set sal=sal-100;
+		update emp set sal=sal+100;
+		end;
+		
+	Consistency
+	
+	- Before & after your transaction, your database should be cons.
+	
+	Isolation
+	
+	- Reads/Writes should not interfere., Reads should see cons. past image
+	- MVCC (may lead to lots of dead tuples)
+
+	Durability
+	
+	- at anycost my data should be safe.
+	- changes are captured in tx logs, as long as tx logs are present, pg can restore them.

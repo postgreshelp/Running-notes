@@ -1,0 +1,14 @@
+control file
+------------
+Read controlfile:
+
+/usr/pgsql-17/bin/pg_controldata  -D /u01/pgsql/17
+
+pg_control version number:            1700
+Catalog version number:               202406281
+Database system identifier:           7462562898206540525
+Database cluster state:               in production
+pg_control last modified:             Wednesday 22 January 2025 08:36:52 AM
+Latest checkpoint location:           0/30002
+Latest checkpoint's REDO location:    0/30001
+Latest checkpoint's REDO WAL file:    00000001000000000000001C

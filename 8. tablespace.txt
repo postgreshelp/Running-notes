@@ -1,0 +1,7 @@
+create tablespace customts location '/u01/custom';
+
+create database b tablespace customts;
+
+alter table pgbench_accounts set tablespace customts;
+
+alter database a set tablespace customts;

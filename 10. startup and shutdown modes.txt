@@ -1,0 +1,57 @@
+startup & shutdown modes
+--------------------------
+Shutdown modes are:
+  smart       quit after all clients have disconnected
+  fast        quit directly, with proper shutdown (default)
+  immediate   quit without complete shutdown; will lead to recovery on restart
+  
+LOG:  received fast shutdown request
+LOG:  aborting any active transactions
+LOG:  background worker "logical replication launcher" (PID 6283) exited with exit code 1
+LOG:  shutting down
+LOG:  checkpoint starting: shutdown immediate
+LOG:  checkpoint complete: wrote 3 buffers (0.0%); 0 WAL file(s) added, 0 removed, 0 recycled; write=0.001 s, sync=0.002 s, total=0.007 s; sync files=2, longest=0.001 s, average=0.001 s; distance=0 kB, estimate=0 kB; lsn=0/1C04FE68, redo lsn=0/1C04FE68
+2025-01-23 07:44:57.636 IST [6276] LOG:  database system is shut down
+
+LOG:  starting PostgreSQL 17.2 on x86_64-pc-linux-gnu, compiled by gcc (GCC) 11.5.0 20240719 (Red Ha
+LOG:  listening on IPv6 address "::1", port 5432
+LOG:  listening on IPv4 address "127.0.0.1", port 5432
+LOG:  listening on Unix socket "/run/postgresql/.s.PGSQL.5432"
+LOG:  listening on Unix socket "/tmp/.s.PGSQL.5432"
+LOG:  database system was shut down at 2025-01-23 07:44:57 IST
+LOG:  database system is ready to accept connections
+
+LOG:  received immediate shutdown request
+LOG:  database system is shut down
+
+LOG:  starting PostgreSQL 17.2 on x86_64-pc-linux-gnu, compiled by gcc (GCC) 11.5.0 20240719 (Red Ha
+LOG:  listening on IPv6 address "::1", port 5432
+LOG:  listening on IPv4 address "127.0.0.1", port 5432
+LOG:  listening on Unix socket "/run/postgresql/.s.PGSQL.5432"
+LOG:  listening on Unix socket "/tmp/.s.PGSQL.5432"
+LOG:  database system was interrupted; last known up at 2025-01-23 07:45:24 IST
+LOG:  database system was not properly shut down; automatic recovery in progress
+LOG:  redo starts at 0/1C04FEE0
+LOG:  invalid record length at 0/1C04FF18: expected at least 24, got 0
+LOG:  redo done at 0/1C04FEE0 system usage: CPU: user: 0.00 s, system: 0.00 s, elapsed: 0.00 s
+LOG:  checkpoint starting: end-of-recovery immediate wait
+LOG:  checkpoint complete: wrote 3 buffers (0.0%); 0 WAL file(s) added, 0 removed, 0 recycled; write
+ s; sync files=2, longest=0.002 s, average=0.002 s; distance=0 kB, estimate=0 kB; lsn=0/1C04FF18, re
+LOG:  database system is ready to accept connections
+
+
+
+000000010000000000000037	-> checkpoint 
+000000010000000000000038
+000000010000000000000039
+00000001000000000000003A
+00000001000000000000003B
+00000001000000000000003C
+00000001000000000000003D
+
+ostgres@lab01 pg_wal]$ pg_controldata -D /u01/pgsql/17 | grep 'checkpoint location'
+Latest checkpoint location:           0/3726C408
+
+/usr/pgsql-17/bin/pg_resetwal -D /u01/pgsql/17 -f
+
+

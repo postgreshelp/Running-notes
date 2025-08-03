@@ -1,0 +1,169 @@
+post-installation steps
+------------------------
+1. set the password for postgres user
+
+postgres=# \password
+Enter new password for user "postgres":
+Enter it again:
+postgres=#
+
+2. Enable external connectivity
+
+[postgres@lab01 ~]$ psql -h 192.168.231.133
+
+psql: error: connection to server at "192.168.231.133", port 5432 failed: Connection refused
+        Is the server running on that host and accepting TCP/IP connections?
+[postgres@lab01 ~]$
+###### your listen_address is not set
+
+psql: error: connection to server at "192.168.231.133", port 5432 failed: FATAL:  no pg_hba.conf entry for host "192.168.231.133", user "postgres", database "postgres", no encryption
+###### your pg_hba is not set
+
+[postgres@lab01 17]$ psql -d a -h 192.168.231.133
+psql: error: connection to server at "192.168.231.133", port 5432 failed: FATAL:  pg_hba.conf rejects connection for host "192.168.231.133", user "postgres", database "a", no encryption
+###### your pg_hba is not allowing connection to database a or user postgres
+
+
+connection timeout expired
+###### port is not open.
+
+1. listen_addresses = '*'  							 #postgresql.conf
+
+2. host    all    all     0.0.0.0/0           md5    #pg_hba.conf
+
+3. systemctl stop firewalld
+
+[or]
+
+firewall-cmd --zone=public --add-port=5432/tcp --permanent
+firewall-cmd --reload
+ 
+# TYPE  DATABASE        USER            ADDRESS                 METHOD
+
+# IPv4 local connections:
+host    all				b				0.0.0.0/0		   reject
+host 	db2				all				0.0.0.0/0			reject
+host    all				all				192.168.4.4			reject
+host    all             all             0.0.0.0/0          md5
+
+host    all             all             192.168.4.4        md5
+host    all             all             192.168.231.0/24        md5
+host    all             all             0.0.0.0/0          reject
+
+3. modify parameters as per pgtune
+
+max_connections = 200
+shared_buffers = 1GB  (15% to 45%)
+
+effective_cache_size = 3GB
+
+ - How much amount of your total RAM you want to use for postgresql operations like (work_mem,
+ maintenance_work_mem.....) out of shared buffers.
+
+maintenance_work_mem = 256MB
+
+checkpoint_completion_target = 0.9
+wal_buffers = 16MB
+default_statistics_target = 100  
+
+random_page_cost = 1.1
+effective_io_concurrency = 200
+
+work_mem = 16MB
+
+huge_pages = off
+
+min_wal_size = 2GB
+max_wal_size = 8GB
+
+max_worker_processes = 8
+max_parallel_workers_per_gather = 4
+max_parallel_workers = 8
+max_parallel_maintenance_workers = 4
+
+#### How to modify them?
+#### What is the significance?
+
+
+
+Modify parameters
+-----------------
+Reload configuration file
+==========================
+
+postgres=# select pg_reload_conf();
+ pg_reload_conf
+----------------
+ t
+(1 row)
+
+postgres=#
+
+(or)
+
+/usr/pgsql-17/bin/pg_ctl reload -D /u01/pgsql/17
+
+postgres=# select distinct context from pg_settings;
+      context
+-------------------
+ postmaster					#restart
+ superuser-backend
+ user						#change at database level, user level, if the context is user
+ internal
+ backend
+ sighup
+ superuser
+(7 rows)
+
+shared_buffers = 8GB                    # min 128kB
+                                        # (change requires restart)
+How to modify
+
+1. change in postgresql.conf 
+work_mem=8MB
+
+2. append in postgresql.configuration
+# CUSTOMIZED OPTIONS
+#-----------------------------------------
+work_mem=16MB ###modified on 16Jan
+
+3.alter system
+postgres=# alter system set work_mem='24MB';
+ALTER SYSTEM
+
+4.at database level
+postgres=# alter database adb set work_mem='32MB';
+ALTER DATABASE
+
+5. change at user level
+adb=# alter user auser set work_mem='52MB';
+ALTER ROLE
+
+6. at database & user combination
+postgres=# alter user auser in database postgres set work_mem='128MB';
+ALTER ROLE
+
+7. at session level
+postgres=# set work_mem='512MB';
+SET
+
+8. at transaction level
+postgres=# begin;
+BEGIN
+postgres=*# set work_mem='1GB';
+SET
+
+Clear auto.conf values
+-----------------------
+postgres=# alter system reset work_mem;
+ALTER SYSTEM
+postgres=# alter system reset all;
+ALTER SYSTEM
+postgres=#
+
+Reset user/database level values
+-----------------------------------
+postgres=# alter database adb reset work_mem;
+ALTER DATABASE
+postgres=#
+

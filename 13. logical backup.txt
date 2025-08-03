@@ -1,0 +1,49 @@
+Logical backup
+---------------
+pg_dump -U kfc_user -d kfc_db -t emp > emp.sql
+psql  -U kfc_user -d kfc_db < emp.sql
+
+Export options
+--------------
+pg_dump -U kfc_user -d kfc_db -t emp -Fc -f emp.backup     #custom format, cannot read, can set custom compression
+pg_dump -U kfc_user -d kfc_db -t emp -Fp -f emp.plain	   #can read,  
+pg_dump -U kfc_user -d kfc_db -t emp -Ft -f emp.tar		   #o/s tar
+pg_dump -U kfc_user -d kfc_db -t emp -Fd -f emp			   #direcory format, parallelism
+
+Examples.,
+
+GRANT SELECT ON TABLE kfc_user.emp TO kfc_read;
+GRANT SELECT ON TABLE kfc_user.emp TO kfc_dev;
+GRANT ALL ON TABLE kfc_user.emp TO kfc_dba;
+
+
+
+[postgres@lab01 backups]$ psql -U kfc_user -d kfc_db < emp.backup
+The input is a PostgreSQL custom-format dump.
+Use the pg_restore command-line client to restore this dump to a database.
+
+pg_restore  -U kfc_user -d kfc_db emp.backup
+
+Take complete database backup
+-------------------------------
+pg_dump -U postgres -d postgres -Fc -f postgres.bkp
+
+Restore a single table
+----------------------
+pg_restore  -U postgres -d postgres postgres.bkp -t pemp
+
+while restoring, if you need to restore to a different schema or a different user
+
+- edit your dump file.  
+	 use vi editor to edit
+	 :%s/findkeyword/replacekeyword/g
+	 :wq
+	
+- sed your dump file.
+	sed -i -e 's/kfc_user/kfc_uat/g' emp.sql
+- after your import, use alter table, alter schemas...
+
+kfcuatdb=> alter schema kfc_user rename to kfc_uat;
+ALTER SCHEMA
+kfcuatdb=# alter table kfc_uat.emp owner to kfc_uat;
+ALTER TABLE

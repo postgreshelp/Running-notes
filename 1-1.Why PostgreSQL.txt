@@ -1,0 +1,26 @@
+Why PostgreSQL?
+
+	- Open source
+	
+		- source code is available online
+	
+	- Wide variety of options
+	
+		In terms of features
+		
+		Open source -> C.V
+		EDB			-> PPAS
+		Amazon      -> Aurora (Open souce -> RDS)
+		Postgrespro -> PostgreSQL EE
+		Greenplum   -> GreenplumDB
+		..
+		..
+		
+		In terms of budget
+		
+		100$ -> EDB + support
+		 50$ -> C.V + EDB Support 
+		 30$ -> Third party (Too many)
+		  0$ -> (Good InHouseDBA) 
+				
+	- Highly extensible

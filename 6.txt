@@ -1,0 +1,122 @@
+pqsl
+----
+
+<tool_name> --help 
+e.g., psql --help
+
+[postgres@lab01 17]$ psql -h 192.168.231.133  -U postgres  -p 5432 -d postgres
+Password for user postgres:
+psql (17.2)
+Type "help" for help.
+
+postgres=#
+
+connection string
+-----------------
+username			: postgres
+password			: trust (in pg_hba.conf)
+databasename		: postgres
+host				: localhost
+port				: 5432
+ 
+postgres=>   ###means connected as a normal user
+postgres=#   ###means connected as a super user
+ 
+\?           ###Quick help
+
+\dt	- tables
+\l  - databases
+\du - users
+\dn - schema
+
+postgres=# \h		## help for SQL statements
+
+password file
+==============
+
+export PGPASSWORD=postgres
+psql -h 192.168.231.133  -U postgres  -p 5432 -d postgres
+
+or
+
+PGPASSWORD=postgres psql -h 192.168.231.133  -U postgres  -p 5432 -d postgres
+
+[postgres@lab01 ~]$ cat .pgpass
+*:*:*:postgres:postgres
+
+chmod 600 /home/postgres/.pgpass
+
+psqlrc   (not widely used)
+-------
+
+postgres=#
+[local]:5432 postgres@postgres=#
+[local]:5432 postgres@adb=#
+
+sessions
+wait events
+locks
+Check the slowest running queries
+
+databasesize
+users
+privileges
+
+setting up bash profile
+------------------------
+[postgres@lab01 ~]$ cat .bash_profile
+# .bash_profile
+
+# Get the aliases and functions
+if [ -f ~/.bashrc ]; then
+        . ~/.bashrc
+fi
+
+
+PGHOME=/usr/pgsql-17
+PATH=$PGHOME/bin:$PATH
+# User specific environment and startup programs
+[postgres@lab01 ~]$
+
+switch between databases & users from within psql prompt
+
+postgres=# \c adb
+You are now connected to database "adb" as user "postgres".
+adb=#
+adb=# \c - auser
+You are now connected to database "adb" as user "auser".
+adb=>
+adb=>
+adb=> \c adb postgres
+You are now connected to database "adb" as user "postgres".
+adb=#
+
+
+Know more about environment variables
+---------------------------------------
+\set  
+
+example.,
+
+[postgres@lab01 ~]$ psql
+psql (17.2)
+Type "help" for help.
+
+postgres=# \set AUTOCOMMIT off
+postgres=# create table nt as select * from i;
+SELECT 1000000
+Time: 498.254 ms
+postgres=*#
+postgres=*# commit;
+COMMIT
+Time: 0.650 ms
+postgres=#
+postgres=#
+
+
+postgres=# \set AUTOCOMMIT ON
+postgres=# create table nt1 as select * from i;
+SELECT 1000000
+Time: 696.993 ms
+postgres=#
+

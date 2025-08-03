@@ -1,0 +1,203 @@
+physical backups -> physical replication
+-----------------------------------------
+
+- provisioned 3 machines
+- installed postgres software on all three machines
+- setup postgresql on machine 1.
+
+what happens when you initiate backup?
+
+1. copy data directory to backup location.
+2. copy WALs generated during the backup time to backup location.
+
+Enable archive logging
+----------------------
+
+mkdir -p /u01/archivelogs
+archive_mode = on
+archive_command = 'cp %p /u01/archivelogs/%f'   
+
+Backup
+-------
+host 	replication		all			0.0.0.0/0		md5
+
+/usr/pgsql-17/bin/pg_basebackup -D /u01/backup/ -Ft -P --checkpoint=fast
+/usr/pgsql-17/bin/pg_basebackup -D /u01/backup/ --checkpoint=fast -h 192.168.231.133 -P
+
+
+lab01 - 192.168.231.133
+lab02 - 192.168.231.136
+
+ssh-keygen -t rsa
+ssh postgres@192.168.231.136 mkdir -p .ssh
+cat .ssh/id_rsa.pub | ssh postgres@192.168.231.136 'cat >> .ssh/authorized_keys'
+ssh postgres@192.168.231.136 "chmod 700 .ssh; chmod 640 .ssh/authorized_keys"
+ssh postgres@192.168.231.136
+
+ssh-keygen -t rsa
+ssh postgres@192.168.231.133 mkdir -p .ssh
+cat .ssh/id_rsa.pub | ssh postgres@192.168.231.133 'cat >> .ssh/authorized_keys'
+ssh postgres@192.168.231.133 "chmod 700 .ssh; chmod 640 .ssh/authorized_keys"
+ssh postgres@192.168.231.133
+
+task 1
+-------
+Take the backup from remote machine
+
+pg_basebackup -D /u01/pgsql/17 --checkpoint=fast -P -h 192.168.231.133 -Ft 
+
+cd /u01/pgsql/17
+tar -xf base.tar
+mv pg_wal.tar pg_wal
+cd pg_wal
+tar -xf pg_wal.tar
+rm -rf pg_wal.tar
+cd ../
+rm -rf base.tar
+
+/usr/pgsql-17/bin/pg_ctl start -D /u01/pgsql/17
+
+task 2
+-------
+Take the backup from remote machine + apply archive logs after the backup is taken
+ 
+task 1 +
+touch recovery.signal
+restore_command = 'scp 192.168.231.133:/u01/archivelogs/%f %p'
+
+task 3:
+-------
+Take the backup from remote machine + apply archive logs but until my fav. point only
+
+touch recovery.signal
+restore_command = 'scp 192.168.231.133:/u01/archivelogs/%f %p'
+recovery_target_lsn = '<LSN>'
+
+task 4  (WARM STANDBY)
+------
+Take the backup from remote machine + apply archive logs and wait for next archive to come.
+
+touch standby.signal
+restore_command = 'scp 192.168.231.133:/u01/archivelogs/%f %p'
+
+task 5
+------
+task 4+
+primary_conninfo = 'user=postgres password=postgres host=192.168.231.133'
+
+(or)
+
+/usr/pgsql-17/bin/pg_basebackup -D /u01/pgsql/17 --checkpoint=fast -h 192.168.231.133 -P -R
+restore_command = 'scp 192.168.231.133:/u01/archivelogs/%f %p'
+
+task 6
+-------
+primary:
+synchronous_standby_names='*'
+
+standby:
+primary_conninfo='user=postgres password=postgres host=192.168.231.133 application_name=random'
+
+sync check command
+------------------
+select now(), pg_size_pretty(pg_wal_lsn_diff(sent_lsn,replay_lsn)) as wal_lag from pg_stat_replication;
+
+Hot standby conflicts
+---------------------
+postgres=# select *, pg_sleep(500) from emp;
+ERROR:  canceling statement due to conflict with recovery
+DETAIL:  User query might have needed to see row versions that must be removed.
+postgres=#
+
+max_standby_streaming_delay = 300s
+hot_standby_feedback=on
+
+task 7
+-------
+Replication slot based replication.
+
+
+
+
+#recovery_target_name = ''      # the named restore point to which recovery will proceed
+                                # (change requires restart)
+#recovery_target_time = ''      # the time stamp up to which recovery will proceed
+                                # (change requires restart)
+#recovery_target_xid = ''       # the transaction ID up to which recovery will proceed
+                                # (change requires restart)
+#recovery_target_lsn = ''       # the WAL LSN up to which recovery will proceed
+                                # (change requires restart)
+SWITCHOVER DRILL
+---------------------
+
+* STOP APPLICATION
+* STOP ALL YOUR CRON JOBS
+* CHECKPOINT
+
+1. promote your standby
+/usr/pgsql-16/bin/pg_ctl promote -D /u01/pgsql/16
+
+2. Do rewind in primary
+/usr/pgsql-17/bin/pg_rewind --target-pgdata=/u01/pgsql/17 --source-server="port=5432 host=192.168.231.136" 
+ 
+3. Set up replication #old primary
+	
+	1) edit primary_connfinfo
+	2) touch standby.signal
+	3) adjust your restore_command accordingly & create archive location in new primary.(lab02)
+
+
+pgpool
+------
+-> Ensure PostgreSQL software installed
+
+dnf install epel-release
+dnf config-manager --set-enabled crb
+
+dnf install pgpool-II
+
+cp  /etc/pgpool-II/pgpool.conf.sample /etc/pgpool-II/pgpool.conf
+Edit the configuration file /etc/pgpool-II/pgpool.conf
+
+listen_addresses = '*'
+pcp_socket_dir = '/var/run/postgresql'
+unix_socket_directories = '/var/run/postgresql'
+allow_clear_text_frontend_auth = on
+pool_passwd = ''
+
+
+# - Backend Connection Settings -
+
+backend_hostname0 = '192.168.110.171'                             
+backend_port0 = 5432
+backend_weight0 = 1
+backend_data_directory0 = '/u01/pgsql/16'
+backend_flag0 = 'ALLOW_TO_FAILOVER'                                 
+backend_application_name0 = 'server0'
+                                 
+backend_hostname1 = '192.168.110.172'
+backend_port1 = 5432
+backend_weight1 = 1
+backend_data_directory1 = '/u01/pgsql/16'
+backend_flag1 = 'ALLOW_TO_FAILOVER'
+backend_application_name1 = 'server1'
+
+sr_check_user = 'postgres'
+sr_check_password = 'postgres'
+sr_check_database = 'postgres'
+
+health_check_period =1
+
+health_check_user = 'postgres'
+health_check_password = 'postgres'
+health_check_database = 'postgres'
+
+touch /etc/pgpool-II/pool_passwd
+
+systemctl start pgpool-II
+
+[postgres@v3 ~]$ export PGPASSWORD=postgres
+[postgres@v3 ~]$ psql  -U postgres -p 9999 postgres  -c "show pool_nodes"
+
+touch /etc/pgpool-II/pool_passwd
+
